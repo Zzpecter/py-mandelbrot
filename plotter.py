@@ -1,8 +1,11 @@
 """Plotter module"""
+from collections import defaultdict
+
 from constants import START_X, START_Y, END_X, END_Y
 from PIL import Image, ImageDraw
 from mandelbrot import Mandelbrot
 from datetime import datetime
+from math import floor, ceil
 
 
 class Plotter:
@@ -21,8 +24,9 @@ class Plotter:
         object.
 
         """
-        im = Image.new('RGB', (self.width, self.height), (0, 0, 0))
-        draw = ImageDraw.Draw(im)
+
+        histogram = defaultdict(lambda: 0)
+        values = {}
 
         for x in range(0, self.width):
             for y in range(0, self.height):
@@ -31,8 +35,33 @@ class Plotter:
                             START_Y + (y / self.height) * (END_Y - START_Y))
 
                 iterations = self.my_mandel.perform_calculation(c)
-                color = 255 - int(iterations * 255 / self.my_mandel.max_iterations)
+                values[(x, y)] = iterations
+                if iterations < self.my_mandel.max_iterations:
+                    histogram[floor(iterations)] += 1
 
-                draw.point([x, y], (color, color, color))
+        total = sum(histogram.values())
+        hues = []
+        h = 0
+        for i in range(self.my_mandel.max_iterations):
+            h += histogram[i] / total
+            hues.append(h)
+        hues.append(h)
 
-        im.save(f'./output/IMG-{datetime.now():%Y%m%d_%H%M%S%z}.png', 'PNG')
+        im = Image.new('HSV', (self.width, self.height), (0, 0, 0))
+        draw = ImageDraw.Draw(im)
+
+        for x in range(0, self.width):
+            for y in range(0, self.height):
+                m = values[(x, y)]
+
+                hue = 255 - int(255 * self.linear_interpolation(hues[floor(m)], hues[ceil(m)], m % 1))
+                saturation = 255
+                value = 255 if m < self.my_mandel.max_iterations else 0
+
+                draw.point([x, y], (hue, saturation, value))
+
+        im.convert('RGB').save(f'./output/IMG-{datetime.now():%Y%m%d_%H%M%S%z}.png', 'PNG')
+
+    @staticmethod
+    def linear_interpolation(color1, color2, t):
+        return color1 * (1 - t) + color2 * t

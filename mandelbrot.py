@@ -1,4 +1,7 @@
 """Mandelbrot module"""
+from math import log, log2
+
+
 class Mandelbrot:
     """
     Class for performing the necessary calculations  and variables to generate
@@ -24,4 +27,7 @@ class Mandelbrot:
         while abs(result) <= self.threshold_value and count < self.max_iterations:
             result = result**2 + complex_num
             count += 1
-        return count
+
+            if count == self.max_iterations:
+                return self.max_iterations
+        return count + 1 - log(log2(abs(result)))
