@@ -65,3 +65,6 @@ class Plotter:
     @staticmethod
     def linear_interpolation(color1, color2, t):
         return color1 * (1 - t) + color2 * t
+
+
+    def plot_with_GPU():
